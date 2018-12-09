@@ -8,7 +8,7 @@ ENV INIT_DAEMON_BASE_URI http://identifier/init-daemon
 ENV INIT_DAEMON_STEP spark_master_init
 
 ENV SPARK_VERSION=2.3.2
-ENV HADOOP_VERSION=2.7
+ENV HADOOP_VERSION=2.8.4
 
 COPY wait-for-step.sh /
 COPY execute-step.sh /
@@ -21,10 +21,14 @@ RUN chmod +x /usr/bin/apt-get-install
 
 RUN apt-get-install -y curl \
       && chmod +x *.sh \
-      && wget http://apache.mirror.iphh.net/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
-      && tar -xvzf spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
-      && mv spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION} spark \
-      && rm spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz \
+      && curl https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-without-hadoop.tgz | \
+         tar -xz  \
+      && ln -s spark-${SPARK_VERSION}-bin-without-hadoop spark \
+      && wget https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz |\
+         tar -xz  \
+      && ln -s hadoop-${HADOOP_VERSION} hadoop \
+      && cp /spark/conf/spark-env.sh.template  /spark/conf/spark-env.sh \
+      && echo 'export SPARK_DIST_CLASSPATH=$(/hadoop/bin/hadoop classpath)' >> /spark/conf/spark-env.sh \
       #&& cd /css \
       #&& jar uf /spark/jars/spark-core_2.11-${SPARK_VERSION}.jar org/apache/spark/ui/static/timeline-view.css \
       && cd /
